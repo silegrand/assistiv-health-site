@@ -458,10 +458,31 @@ let W, H, raf, running = true, stage = 0, t = 0;
 let particles = [], nodes = [], avatars = [];
 let autoTimer = null;
 
+/* roundRect polyfill for Safari <15.4 and older browsers */
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    r = Math.min(r, w/2, h/2);
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r);
+    this.lineTo(x + w, y + h - r);
+    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    this.lineTo(x + r, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r);
+    this.lineTo(x, y + r);
+    this.quadraticCurveTo(x, y, x + r, y);
+    this.closePath();
+  };
+}
+
 function resize() {
   const r = canvas.parentElement.getBoundingClientRect();
-  W = canvas.width  = r.width;
-  H = canvas.height = r.height;
+  const newW = Math.floor(r.width)  || 800;
+  const newH = Math.floor(r.height) || 380;
+  if (newW === W && newH === H) return;
+  W = canvas.width  = newW;
+  H = canvas.height = newH;
   initStage(stage);
 }
 
@@ -903,9 +924,12 @@ document.getElementById('btnPlay').addEventListener('click', function() {
 
 window.addEventListener('resize', () => { cancelAnimationFrame(raf); resize(); if (running) raf = requestAnimationFrame(draw); });
 
-resize();
-draw();
-resetAutoAdvance();
+/* Defer first resize to after first paint so getBoundingClientRect returns real dimensions */
+requestAnimationFrame(() => {
+  resize();
+  draw();
+  resetAutoAdvance();
+});
 </script>
 </body>
 </html>
