@@ -609,6 +609,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
       <div class="fep-copy">
         <p>The Frailty Emergence Probability model generates a composite risk score for each of Kent &amp; Medway's 13 districts. Seventeen signals — falls rates, prescribing data, deprivation, isolation, winter mortality — normalised to a common scale and weighted by clinical significance.</p>
         <p>A score of 65 means that district is substantially more at-risk than the England average across multiple measures simultaneously. The map routes preventive investment to where it will have the greatest effect.</p>
+        <p>When a UKHSA/Met Office Heat-Health or Cold-Health Alert is active for South East England, FEP scores for high-risk districts are uplifted and medication risk signals — anticholinergics, diuretics, hypnotics — are flagged for elevated clinical sensitivity. The same alert status is injected into RESILIENCE screening sessions in Layer 4.</p>
         <p style="font-size:.78rem;color:rgba(255,255,255,.38);">† Dementia diagnosis rate below England average indicates unmet diagnostic need — not better performance.</p>
         <div class="fep-tools">
           <a href="https://silegrand.github.io/assistivagents/layer2-map-pdf.html" target="_blank" rel="noopener" class="tool-card">
@@ -636,7 +637,11 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
           <div class="sig-row"><span class="sig-name">Dementia diagnosis rate</span><div class="sig-track"><div class="sig-fill" style="width:46%"></div></div><span class="sig-w">6%</span></div>
         </div>
         <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:1.75rem;margin-bottom:.7rem;">Current FEP scores — Kent &amp; Medway ICB · QKS</div>
-        <div class="district-block">
+
+        <!-- Weather alert banner — populated by JS from kent-fep-data.json -->
+        <div id="weather-banner" style="display:none;margin-bottom:.75rem;padding:.6rem 1rem;border-radius:4px;border:1px solid;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;line-height:1.6;"></div>
+
+        <div class="district-block" id="district-block">
           <div class="dr"><span class="dr-name">Thanet</span><span class="dr-score">63</span><span class="tier t-high">High</span></div>
           <div class="dr"><span class="dr-name">Folkestone &amp; Hythe</span><span class="dr-score">57</span><span class="tier t-high">High</span></div>
           <div class="dr"><span class="dr-name">Dover</span><span class="dr-score">57</span><span class="tier t-high">High</span></div>
@@ -646,6 +651,54 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
           <div class="dr"><span class="dr-name">Sevenoaks</span><span class="dr-score">38</span><span class="tier t-low">Low</span></div>
           <div class="dr"><span class="dr-name">Tunbridge Wells</span><span class="dr-score">34</span><span class="tier t-low">Low</span></div>
         </div>
+
+        <script>
+        (function(){
+          const DATA_URL = 'https://raw.githubusercontent.com/silegrand/assistivagents/main/kent-fep-data.json';
+          const TIER = s => s>=55?'t-high':s>=40?'t-mod':'t-low';
+          const LABEL = s => s>=55?'High':s>=40?'Moderate':'Low';
+          const ALERT_COLS = {
+            yellow: {bg:'rgba(196,144,32,0.15)', border:'rgba(196,144,32,0.5)', text:'#f0c040'},
+            amber:  {bg:'rgba(196,100,20,0.18)', border:'rgba(220,120,30,0.6)', text:'#ffaa50'},
+            red:    {bg:'rgba(180,40,40,0.18)',  border:'rgba(210,50,50,0.6)',  text:'#ff7070'},
+          };
+
+          fetch(DATA_URL)
+            .then(r => r.json())
+            .then(data => {
+              const districts = (data.districts || []).slice(0, 8);
+              const wa = data.weather_alert || {};
+              const level = (wa.alert_level || 'green').toLowerCase();
+              const atype = (wa.alert_type || '').toLowerCase();
+              const uplift = wa.fep_uplift || 0;
+              const useWeather = uplift > 0 && ['yellow','amber','red'].includes(level);
+
+              // Rebuild district block with live data
+              const block = document.getElementById('district-block');
+              if (districts.length) {
+                block.innerHTML = districts.map(d => {
+                  const score = useWeather ? (d.fep_weather || d.fep) : d.fep;
+                  const tier  = TIER(score);
+                  const label = LABEL(score);
+                  const tag   = useWeather && d.fep_weather > d.fep
+                    ? `<span style="font-family:var(--mono);font-size:.5rem;color:#ffaa50;margin-left:.3rem;">+${uplift}⚠</span>` : '';
+                  return `<div class="dr"><span class="dr-name">${d.name}</span><span class="dr-score">${score}${tag}</span><span class="tier ${tier}">${label}</span></div>`;
+                }).join('');
+              }
+
+              // Show weather banner if alert is active
+              if (ALERT_COLS[level]) {
+                const c = ALERT_COLS[level];
+                const typeLabel = atype === 'heat' ? 'Heat-Health' : 'Cold-Health';
+                const medRisk = (wa.med_risk_signals || []).join(', ') || 'none flagged';
+                const banner = document.getElementById('weather-banner');
+                banner.style.cssText = `display:block;background:${c.bg};border-color:${c.border};color:${c.text};margin-bottom:.75rem;padding:.6rem 1rem;border-radius:4px;border:1px solid;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;line-height:1.6;`;
+                banner.innerHTML = `UKHSA/Met Office ${level.toUpperCase()} ${typeLabel} Alert — South East England &nbsp;·&nbsp; FEP scores for high-risk districts uplifted by +${uplift} &nbsp;·&nbsp; Elevated medication risk: ${medRisk}`;
+              }
+            })
+            .catch(() => {}); // Fail silently — static fallback scores remain visible
+        })();
+        </script>
       </div>
     </div>
   </div>
