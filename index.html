@@ -609,6 +609,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
       <div class="fep-copy">
         <p>The Frailty Emergence Probability model generates a composite risk score for each of Kent &amp; Medway's 13 districts. Seventeen signals — falls rates, prescribing data, deprivation, isolation, winter mortality — normalised to a common scale and weighted by clinical significance.</p>
         <p>A score of 65 means that district is substantially more at-risk than the England average across multiple measures simultaneously. The map routes preventive investment to where it will have the greatest effect.</p>
+        <p>The companion <strong>Carer Burden Index</strong> scores the same 13 districts on five carer-specific signals — 20+ hour unpaid carer rates, social isolation, support access, statutory assessment, and wellbeing. The dual FEP × CBI quadrant map reveals where frailty risk and carer system strain converge simultaneously.</p>
         <p>When a UKHSA/Met Office Heat-Health or Cold-Health Alert is active for South East England, FEP scores for high-risk districts are uplifted and medication risk signals — anticholinergics, diuretics, hypnotics — are flagged for elevated clinical sensitivity. The same alert status is injected into RESILIENCE screening sessions in Layer 4.</p>
         <p style="font-size:.78rem;color:rgba(255,255,255,.38);">† Dementia diagnosis rate below England average indicates unmet diagnostic need — not better performance.</p>
         <div class="fep-tools">
@@ -621,6 +622,11 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
             <div class="tc-tag">Scoring engine</div>
             <div class="tc-title">FEP Configurator</div>
             <div class="tc-desc">17 adjustable signal weights. Commissioner-configurable. Ranked zone results with uncertainty flags.</div>
+          </a>
+          <a href="https://silegrand.github.io/assistivagents/cbi-fep-map.html" target="_blank" rel="noopener" class="tool-card">
+            <div class="tc-tag">Dual intelligence map</div>
+            <div class="tc-title">FEP × CBI Quadrant Map</div>
+            <div class="tc-desc">Frailty risk and carer burden overlaid. Identifies districts where both systems face simultaneous pressure.</div>
           </a>
         </div>
       </div>
@@ -654,8 +660,9 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
 
         <script>
         (function(){
-          const DATA_URL = 'https://raw.githubusercontent.com/silegrand/assistivagents/main/kent-fep-data.json';
-          const TIER = s => s>=55?'t-high':s>=40?'t-mod':'t-low';
+          const FEP_URL = 'https://raw.githubusercontent.com/silegrand/assistivagents/main/kent-fep-data.json';
+          const CBI_URL = 'https://raw.githubusercontent.com/silegrand/assistivagents/main/kent-cbi-data.json';
+          const TIER  = s => s>=55?'t-high':s>=40?'t-mod':'t-low';
           const LABEL = s => s>=55?'High':s>=40?'Moderate':'Low';
           const ALERT_COLS = {
             yellow: {bg:'rgba(196,144,32,0.15)', border:'rgba(196,144,32,0.5)', text:'#f0c040'},
@@ -663,40 +670,54 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
             red:    {bg:'rgba(180,40,40,0.18)',  border:'rgba(210,50,50,0.6)',  text:'#ff7070'},
           };
 
-          fetch(DATA_URL)
-            .then(r => r.json())
-            .then(data => {
-              const districts = (data.districts || []).slice(0, 8);
-              const wa = data.weather_alert || {};
-              const level = (wa.alert_level || 'green').toLowerCase();
-              const atype = (wa.alert_type || '').toLowerCase();
-              const uplift = wa.fep_uplift || 0;
-              const useWeather = uplift > 0 && ['yellow','amber','red'].includes(level);
+          Promise.all([
+            fetch(FEP_URL).then(r => r.json()),
+            fetch(CBI_URL).then(r => r.json()).catch(() => null)
+          ]).then(([fepData, cbiData]) => {
+            const fepDistricts = (fepData.districts || []).slice(0, 8);
+            const cbiDistricts = cbiData ? (cbiData.districts || []) : [];
+            const wa      = fepData.weather_alert || {};
+            const level   = (wa.alert_level || 'green').toLowerCase();
+            const atype   = (wa.alert_type || '').toLowerCase();
+            const uplift  = wa.fep_uplift || 0;
+            const useWeather = uplift > 0 && ['yellow','amber','red'].includes(level);
 
-              // Rebuild district block with live data
-              const block = document.getElementById('district-block');
-              if (districts.length) {
-                block.innerHTML = districts.map(d => {
-                  const score = useWeather ? (d.fep_weather || d.fep) : d.fep;
-                  const tier  = TIER(score);
-                  const label = LABEL(score);
-                  const tag   = useWeather && d.fep_weather > d.fep
-                    ? `<span style="font-family:var(--mono);font-size:.5rem;color:#ffaa50;margin-left:.3rem;">+${uplift}⚠</span>` : '';
-                  return `<div class="dr"><span class="dr-name">${d.name}</span><span class="dr-score">${score}${tag}</span><span class="tier ${tier}">${label}</span></div>`;
-                }).join('');
-              }
+            // Rebuild district block with FEP + CBI columns
+            const block = document.getElementById('district-block');
+            if (fepDistricts.length) {
+              block.innerHTML = fepDistricts.map(d => {
+                const fepScore = useWeather ? (d.fep_weather || d.fep) : d.fep;
+                const fepTier  = TIER(fepScore);
+                const fepLabel = LABEL(fepScore);
+                const tag = useWeather && d.fep_weather > d.fep
+                  ? `<span style="font-family:var(--mono);font-size:.5rem;color:#ffaa50;margin-left:.3rem;">+${uplift}⚠</span>` : '';
 
-              // Show weather banner if alert is active
-              if (ALERT_COLS[level]) {
-                const c = ALERT_COLS[level];
-                const typeLabel = atype === 'heat' ? 'Heat-Health' : 'Cold-Health';
-                const medRisk = (wa.med_risk_signals || []).join(', ') || 'none flagged';
-                const banner = document.getElementById('weather-banner');
-                banner.style.cssText = `display:block;background:${c.bg};border-color:${c.border};color:${c.text};margin-bottom:.75rem;padding:.6rem 1rem;border-radius:4px;border:1px solid;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;line-height:1.6;`;
-                banner.innerHTML = `UKHSA/Met Office ${level.toUpperCase()} ${typeLabel} Alert — South East England &nbsp;·&nbsp; FEP scores for high-risk districts uplifted by +${uplift} &nbsp;·&nbsp; Elevated medication risk: ${medRisk}`;
-              }
-            })
-            .catch(() => {}); // Fail silently — static fallback scores remain visible
+                const cbiDistrict = cbiDistricts.find(c => c.name === d.name);
+                const cbiScore    = cbiDistrict ? cbiDistrict.cbi : null;
+                const cbiCell     = cbiScore
+                  ? `<span style="font-family:var(--mono);font-size:.5rem;color:rgba(255,255,255,.3);margin:0 .25rem 0 .6rem;">CBI</span><span class="dr-score">${cbiScore}</span><span class="tier ${TIER(cbiScore)}">${LABEL(cbiScore)}</span>`
+                  : '';
+
+                return `<div class="dr">
+                  <span class="dr-name">${d.name}</span>
+                  <span style="font-family:var(--mono);font-size:.5rem;color:rgba(255,255,255,.3);margin-right:.25rem;">FEP</span>
+                  <span class="dr-score">${fepScore}${tag}</span>
+                  <span class="tier ${fepTier}">${fepLabel}</span>
+                  ${cbiCell}
+                </div>`;
+              }).join('');
+            }
+
+            // Show weather banner if alert is active
+            if (ALERT_COLS[level]) {
+              const c = ALERT_COLS[level];
+              const typeLabel = atype === 'heat' ? 'Heat-Health' : 'Cold-Health';
+              const medRisk = (wa.med_risk_signals || []).join(', ') || 'none flagged';
+              const banner = document.getElementById('weather-banner');
+              banner.style.cssText = `display:block;background:${c.bg};border-color:${c.border};color:${c.text};margin-bottom:.75rem;padding:.6rem 1rem;border-radius:4px;border:1px solid;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;line-height:1.6;`;
+              banner.innerHTML = `UKHSA/Met Office ${level.toUpperCase()} ${typeLabel} Alert — South East England &nbsp;·&nbsp; FEP scores for high-risk districts uplifted by +${uplift} &nbsp;·&nbsp; Elevated medication risk: ${medRisk}`;
+            }
+          }).catch(() => {}); // Fail silently — static fallback scores remain visible
         })();
         </script>
       </div>
