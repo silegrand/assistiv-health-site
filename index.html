@@ -412,7 +412,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
         <span class="layer-num">L1</span>
         <div class="layer-content">
           <span class="layer-title">Population Signal Ingestion</span>
-          <span class="layer-desc">ONS Census 2021, NHS Fingertips (10 indicators confirmed), IMD 2019, CQC register, NHSBSA English Prescribing Dataset (7 signal groups, practice level). 17 signals total.</span>
+          <span class="layer-desc">ONS Census 2021, NHS Fingertips (10 indicators confirmed), IMD 2019, CQC register, NHSBSA English Prescribing Dataset (8 signal groups, practice level). 18 signals total.</span>
         </div>
         <div class="layer-right"><span class="badge badge-live">● Active</span></div>
       </div>
@@ -513,7 +513,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
             <div class="arch-agent-head">Agent logic — scoring pipeline</div>
             <div class="arch-steps">
               <div class="arch-step"><div class="arch-step-num">Step 01</div><div class="arch-step-action">Normalise Geography</div><div class="arch-step-detail">Map all inputs to district. ONS lookup tables for PCN → ward → LSOA crosswalk. MSOA linkage in Phase 2.</div></div>
-              <div class="arch-step"><div class="arch-step-num">Step 02</div><div class="arch-step-action">Weight &amp; Score</div><div class="arch-step-detail">17 domain-informed weights: age alone (13%), falls (12%), hip fractures (9%), deprivation (8%), winter mortality (8%).</div></div>
+              <div class="arch-step"><div class="arch-step-num">Step 02</div><div class="arch-step-action">Weight &amp; Score</div><div class="arch-step-detail">18 domain-informed weights: age alone (13%), falls (12%), hip fractures (9%), deprivation (8%), winter mortality (8%). v5 adds oral nutritional supplements as a direct FRAIL Scale signal.</div></div>
               <div class="arch-step"><div class="arch-step-num">Step 03</div><div class="arch-step-action">Composite FEP Index</div><div class="arch-step-detail">Frailty Emergence Probability score per district on 0–100 scale. 50 = England average.</div></div>
               <div class="arch-step"><div class="arch-step-num">Step 04</div><div class="arch-step-action">Service Gap Overlay</div><div class="arch-step-detail">Cross-reference CQC capacity. High FEP + low care provision = priority zones for outreach.</div></div>
               <div class="arch-step"><div class="arch-step-num">Step 05</div><div class="arch-step-action">Change Detection</div><div class="arch-step-detail">Notebook reruns quarterly. Flags districts with rising FEP score — early trajectory signal.</div></div>
@@ -607,7 +607,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
     <h2>Where is the risk?<br>Find it before it presents.</h2>
     <div class="fep-grid">
       <div class="fep-copy">
-        <p>The Frailty Emergence Probability model generates a composite risk score for each of Kent &amp; Medway's 13 districts. Seventeen signals — falls rates, prescribing data, deprivation, isolation, winter mortality — normalised to a common scale and weighted by clinical significance.</p>
+        <p>The Frailty Emergence Probability model generates a composite risk score for each of Kent &amp; Medway's 13 districts. Eighteen signals — falls rates, prescribing data, deprivation, isolation, winter mortality, and oral nutritional supplement prescribing — normalised to a common scale and weighted by clinical significance.</p>
         <p>A score of 65 means that district is substantially more at-risk than the England average across multiple measures simultaneously. The map routes preventive investment to where it will have the greatest effect.</p>
         <p>The companion <strong>Carer Burden Index</strong> scores the same 13 districts on five carer-specific signals — 20+ hour unpaid carer rates, social isolation, support access, statutory assessment, and wellbeing. The dual FEP × CBI quadrant map reveals where frailty risk and carer system strain converge simultaneously.</p>
         <p>When a UKHSA/Met Office Heat-Health or Cold-Health Alert is active for South East England, FEP scores for high-risk districts are uplifted and medication risk signals — anticholinergics, diuretics, hypnotics — are flagged for elevated clinical sensitivity. The same alert status is injected into RESILIENCE screening sessions in Layer 4.</p>
@@ -621,7 +621,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
           <a href="https://silegrand.github.io/assistivagents/layer2-fep-light.html" target="_blank" rel="noopener" class="tool-card">
             <div class="tc-tag">Scoring engine</div>
             <div class="tc-title">FEP Configurator</div>
-            <div class="tc-desc">17 adjustable signal weights. Commissioner-configurable. Ranked zone results with uncertainty flags.</div>
+            <div class="tc-desc">18 adjustable signal weights. Commissioner-configurable. Ranked zone results with uncertainty flags.</div>
           </a>
           <a href="https://silegrand.github.io/assistivagents/cbi-fep-map.html" target="_blank" rel="noopener" class="tool-card">
             <div class="tc-tag">Dual intelligence map</div>
@@ -631,7 +631,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
         </div>
       </div>
       <div>
-        <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.7rem;">Signal weights — top 8 of 17</div>
+        <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.7rem;">Signal weights — top 8 of 18</div>
         <div class="fep-signals">
           <div class="sig-row"><span class="sig-name">Over-75s living alone</span><div class="sig-track"><div class="sig-fill" style="width:100%"></div></div><span class="sig-w">13%</span></div>
           <div class="sig-row"><span class="sig-name">Falls admissions 65+</span><div class="sig-track"><div class="sig-fill" style="width:92%"></div></div><span class="sig-w">12%</span></div>
@@ -640,7 +640,7 @@ footer{background:var(--forest);padding:2.25rem 2rem;color:rgba(255,255,255,0.3)
           <div class="sig-row"><span class="sig-name">Winter mortality index</span><div class="sig-track"><div class="sig-fill" style="width:61%"></div></div><span class="sig-w">8%</span></div>
           <div class="sig-row"><span class="sig-name">Care home gap</span><div class="sig-track"><div class="sig-fill" style="width:54%"></div></div><span class="sig-w">7%</span></div>
           <div class="sig-row"><span class="sig-name">Loneliness rate</span><div class="sig-track"><div class="sig-fill" style="width:46%"></div></div><span class="sig-w">6%</span></div>
-          <div class="sig-row"><span class="sig-name">Dementia diagnosis rate</span><div class="sig-track"><div class="sig-fill" style="width:46%"></div></div><span class="sig-w">6%</span></div>
+          <div class="sig-row"><span class="sig-name">Oral nutritional supplements ↑ v5</span><div class="sig-track"><div class="sig-fill" style="width:23%"></div></div><span class="sig-w">3%</span></div>
         </div>
         <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:1.75rem;margin-bottom:.7rem;">Current FEP scores — Kent &amp; Medway ICB · QKS</div>
 
